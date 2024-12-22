@@ -105,8 +105,7 @@
   </div>
 
   <script>
-    // Atualize o link para o backend hospedado no Render
-    const apiBaseUrl = "https://ratoeira-ads-backend.onrender.com/api";
+    const apiBaseUrl = "http://localhost:3000/api";
 
     // Função para listar configurações
     function fetchConfigurations() {
@@ -136,8 +135,131 @@
         .catch((error) => console.error("Erro ao buscar configurações:", error));
     }
 
-    // Outras funções (createConfiguration, updateConfiguration, deleteConfiguration, etc.) permanecem as mesmas
+    // Função para criar uma nova configuração
+    function createConfiguration() {
+      const platform = document.getElementById("platform").value;
+      const productName = document.getElementById("productName").value;
+      const conversionAction = document.getElementById("conversionAction").value;
+      const maxVisits = document.getElementById("maxVisits").value;
+      const redirectURL = document.getElementById("redirectURL").value;
+
+      const payload = { platform, productName, conversionAction, maxVisits, redirectURL };
+
+      fetch(`${apiBaseUrl}/configurations`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      })
+        .then((response) => response.json())
+        .then(() => {
+          alert("Configuração criada com sucesso!");
+          fetchConfigurations(); // Atualiza a lista
+          resetForm();
+        })
+        .catch((error) => console.error("Erro ao criar configuração:", error));
+    }
+
+    // Função para gerar o script
+    function generateScript(id) {
+      fetch(`${apiBaseUrl}/generate-script/${id}`)
+        .then((response) => response.text())
+        .then((script) => {
+          alert(`Script gerado:\n\n${script}`);
+        })
+        .catch((error) => console.error("Erro ao gerar script:", error));
+    }
+
+    // Função para excluir uma configuração
+    function deleteConfiguration(id) {
+      if (confirm("Tem certeza que deseja excluir esta configuração?")) {
+        fetch(`${apiBaseUrl}/configurations/${id}`, {
+          method: "DELETE",
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            alert(data.message);
+            fetchConfigurations(); // Atualiza a lista de configurações
+          })
+          .catch((error) => console.error("Erro ao excluir configuração:", error));
+      }
+    }
+
+    // Função para editar uma configuração
+    function editConfiguration(id, platform, productName, conversionAction, maxVisits, redirectURL) {
+      document.getElementById("platform").value = platform;
+      document.getElementById("productName").value = productName;
+      document.getElementById("conversionAction").value = conversionAction;
+      document.getElementById("maxVisits").value = maxVisits;
+      document.getElementById("redirectURL").value = redirectURL;
+
+      const saveButton = document.getElementById("saveButton");
+      saveButton.textContent = "Atualizar Configuração";
+      saveButton.onclick = function () {
+        updateConfiguration(id);
+      };
+    }
+
+    // Função para atualizar uma configuração
+    function updateConfiguration(id) {
+      const platform = document.getElementById("platform").value;
+      const productName = document.getElementById("productName").value;
+      const conversionAction = document.getElementById("conversionAction").value;
+      const maxVisits = document.getElementById("maxVisits").value;
+      const redirectURL = document.getElementById("redirectURL").value;
+
+      const payload = { platform, productName, conversionAction, maxVisits, redirectURL };
+
+      fetch(`${apiBaseUrl}/configurations/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          alert(data.message);
+          fetchConfigurations();
+          resetForm();
+        })
+        .catch((error) => console.error("Erro ao atualizar configuração:", error));
+    }
+
+    // Função para resetar o formulário
+    function resetForm() {
+      document.getElementById("platform").value = "";
+      document.getElementById("productName").value = "";
+      document.getElementById("conversionAction").value = "";
+      document.getElementById("maxVisits").value = "";
+      document.getElementById("redirectURL").value = "";
+
+      const saveButton = document.getElementById("saveButton");
+      saveButton.textContent = "Salvar Configuração";
+      saveButton.onclick = createConfiguration;
+    }
+
+    // Carrega as configurações ao iniciar
     fetchConfigurations();
-  </script>
+  data.forEach((config) => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${config.id}</td>
+      <td>${config.platform}</td>
+      <td>${config.productName}</td>
+      <td>${config.conversionAction}</td>
+      <td>${config.maxVisits}</td>
+      <td>${config.redirectURL}</td>
+      <td>${config.visits}</td>
+      <td>
+        <button class="generate-btn" onclick="generateScript(${config.id})">Gerar Script</button>
+        <button class="delete-btn" onclick="deleteConfiguration(${config.id})">Excluir</button>
+        <button class="edit-btn" onclick="editConfiguration(${config.id}, '${config.platform}', '${config.productName}', '${config.conversionAction}', ${config.maxVisits}, '${config.redirectURL}')">Editar</button>
+      </td>
+    `;
+    tableBody.appendChild(row);
+  });
+    </script>  
 </body>
 </html>
