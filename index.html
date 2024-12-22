@@ -63,7 +63,7 @@
       border: none;
       cursor: pointer;
       margin-left: 5px;
-      display: none; /* Botão oculto inicialmente */
+      display: none;
     }
 
     .delete-btn {
@@ -72,6 +72,15 @@
       color: white;
       border: none;
       cursor: pointer;
+    }
+
+    .edit-btn {
+      padding: 5px 10px;
+      background-color: #ff9800;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin-left: 5px;
     }
   </style>
 </head>
@@ -128,6 +137,7 @@
               <td>
                 <button class="generate-btn" onclick="generateScript(${config.id})">Gerar Script</button>
                 <button class="copy-btn" id="copy-${config.id}" onclick="copyScript(${config.id})">Copiar Script</button>
+                <button class="edit-btn" onclick="editConfiguration(${config.id}, '${config.platform}', '${config.productName}', '${config.conversionAction}', ${config.maxVisits}, '${config.redirectURL}')">Editar</button>
                 <button class="delete-btn" onclick="deleteConfiguration(${config.id})">Excluir</button>
               </td>
             `;
@@ -163,43 +173,45 @@
         .catch((error) => console.error("Erro ao criar configuração:", error));
     }
 
-    // Função para gerar o script
-    function generateScript(id) {
-      fetch(`${apiBaseUrl}/generate-script/${id}`)
-        .then((response) => response.text())
-        .then((script) => {
-          alert(`Script gerado:\n\n${script}`);
-          const copyButton = document.getElementById(`copy-${id}`);
-          copyButton.style.display = "inline-block"; // Exibe o botão de cópia
-          copyButton.dataset.script = script; // Armazena o script no botão
-        })
-        .catch((error) => console.error("Erro ao gerar script:", error));
+    // Função para editar uma configuração
+    function editConfiguration(id, platform, productName, conversionAction, maxVisits, redirectURL) {
+      document.getElementById("platform").value = platform;
+      document.getElementById("productName").value = productName;
+      document.getElementById("conversionAction").value = conversionAction;
+      document.getElementById("maxVisits").value = maxVisits;
+      document.getElementById("redirectURL").value = redirectURL;
+
+      const saveButton = document.getElementById("saveButton");
+      saveButton.textContent = "Atualizar Configuração";
+      saveButton.onclick = function () {
+        updateConfiguration(id);
+      };
     }
 
-    // Função para copiar o script para a área de transferência
-    function copyScript(id) {
-      const copyButton = document.getElementById(`copy-${id}`);
-      const script = copyButton.dataset.script;
-      navigator.clipboard.writeText(script).then(() => {
-        alert("Script copiado para a área de transferência!");
-      }).catch((error) => {
-        console.error("Erro ao copiar script:", error);
-      });
-    }
+    // Função para atualizar uma configuração
+    function updateConfiguration(id) {
+      const platform = document.getElementById("platform").value;
+      const productName = document.getElementById("productName").value;
+      const conversionAction = document.getElementById("conversionAction").value;
+      const maxVisits = document.getElementById("maxVisits").value;
+      const redirectURL = document.getElementById("redirectURL").value;
 
-    // Função para excluir uma configuração
-    function deleteConfiguration(id) {
-      if (confirm("Tem certeza que deseja excluir esta configuração?")) {
-        fetch(`${apiBaseUrl}/configurations/${id}`, {
-          method: "DELETE",
+      const payload = { platform, productName, conversionAction, maxVisits, redirectURL };
+
+      fetch(`${apiBaseUrl}/configurations/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          alert(data.message);
+          fetchConfigurations(); // Atualiza a lista
+          resetForm();
         })
-          .then((response) => response.json())
-          .then((data) => {
-            alert(data.message);
-            fetchConfigurations(); // Atualiza a lista de configurações
-          })
-          .catch((error) => console.error("Erro ao excluir configuração:", error));
-      }
+        .catch((error) => console.error("Erro ao atualizar configuração:", error));
     }
 
     // Função para resetar o formulário
@@ -213,6 +225,42 @@
       const saveButton = document.getElementById("saveButton");
       saveButton.textContent = "Salvar Configuração";
       saveButton.onclick = createConfiguration;
+    }
+
+    // Função para gerar o script
+    function generateScript(id) {
+      fetch(`${apiBaseUrl}/generate-script/${id}`)
+        .then((response) => response.text())
+        .then((script) => {
+          alert(`Script gerado:\n\n${script}`);
+          const copyButton = document.getElementById(`copy-${id}`);
+          copyButton.style.display = "inline-block";
+          copyButton.dataset.script = script;
+        })
+        .catch((error) => console.error("Erro ao gerar script:", error));
+    }
+
+    // Função para copiar o script
+    function copyScript(id) {
+      const script = document.getElementById(`copy-${id}`).dataset.script;
+      navigator.clipboard.writeText(script).then(() => {
+        alert("Script copiado para a área de transferência!");
+      }).catch((error) => console.error("Erro ao copiar script:", error));
+    }
+
+    // Função para excluir uma configuração
+    function deleteConfiguration(id) {
+      if (confirm("Tem certeza que deseja excluir esta configuração?")) {
+        fetch(`${apiBaseUrl}/configurations/${id}`, {
+          method: "DELETE",
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            alert(data.message);
+            fetchConfigurations();
+          })
+          .catch((error) => console.error("Erro ao excluir configuração:", error));
+      }
     }
 
     // Carrega as configurações ao iniciar
